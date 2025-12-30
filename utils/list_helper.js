@@ -58,4 +58,28 @@ const mostBlogs = (blogs) => {
     })
 }
 
-module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs }
+const mostLikes = (blogs) => {
+    if (blogs.length === 0) {
+        return {}
+    }
+    let list_auth = [
+        {author: blogs[0].author,likes: blogs[0].likes},
+    ]
+    for (let index = 1; index < blogs.length; index++) {
+        let req_index = list_auth.findIndex((auth) => auth.author == blogs[index].author)
+        if (req_index > -1) {
+            list_auth[req_index].likes += blogs[index].likes
+        } else {
+           list_auth.push({
+                author: blogs[index].author,
+                likes: blogs[index].likes
+            }) 
+        }
+    }
+    return list_auth.reduce((prev, curr) => {
+        //when there's a tie, your function keeps replacing with the later tied author, ultimately returning the LAST author who has the maximum count
+        return prev.likes > curr.likes ? prev : curr
+    })
+}
+
+module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs, mostLikes }
