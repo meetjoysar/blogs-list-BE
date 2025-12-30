@@ -53,6 +53,7 @@ const mostBlogs = (blogs) => {
         }
     }
     return list_auth.reduce((prev, curr) => {
+        //when there's a tie, your function keeps replacing with the later tied author, ultimately returning the LAST author who has the maximum count
         return prev.blogs > curr.blogs ? prev : curr
     })
 }
