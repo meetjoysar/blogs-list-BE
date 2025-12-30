@@ -34,4 +34,27 @@ const favoriteBlog = (blogs) => {
     : blogs.reduce(reducer, blogs[0])
 }
 
-module.exports = { dummy, totalLikes, favoriteBlog }
+const mostBlogs = (blogs) => {
+    if (blogs.length === 0) {
+        return {}
+    }
+    let list_auth = [
+        {author: String(blogs[0].author),blogs: 1},
+    ]
+    for (let index = 1; index < blogs.length; index++) {
+        let req_index = list_auth.findIndex((auth) => auth.author == blogs[index].author)
+        if (req_index > -1) {
+            list_auth[req_index].blogs += 1
+        } else {
+           list_auth.push({
+                author: blogs[index].author,
+                blogs: 1
+            }) 
+        }
+    }
+    return list_auth.reduce((prev, curr) => {
+        return prev.blogs > curr.blogs ? prev : curr
+    })
+}
+
+module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs }
