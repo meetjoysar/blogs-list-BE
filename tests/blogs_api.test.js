@@ -41,7 +41,7 @@ test('unique id of blog posts is id, by default db names _id', async () => {
     assert.ok(!('__v' in response.body[0]))
 })
 
-test.only('a valid blogpost can be added', async () => {
+test('a valid blogpost can be added', async () => {
     const newBlogpost = {
         title: 'third one test post',
         author: 'Chaava',
@@ -60,6 +60,24 @@ test.only('a valid blogpost can be added', async () => {
 
     assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1)
     assert(contents.includes('third one test post'))
+})
+
+test.only('verifies, if likes is missing from req, it will default to value 0', async () => {
+    const newBlogpost = {
+        title: 'third one test post w/o likes',
+        author: 'Chintu',
+        url: 'www.chintu.com',
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlogpost)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+    
+    const blogsAtEnd = await helper.blogsInDb()
+    const addedBlog = blogsAtEnd.find(b => b.title === 'third one test post w/o likes')
+    assert.strictEqual(addedBlog.likes, 0)
 })
 
 after(async () => {
