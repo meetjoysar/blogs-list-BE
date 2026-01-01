@@ -5,6 +5,8 @@ const app = require('../app')
 const assert = require('node:assert')
 const helper = require('./test_helper')
 const Blog = require('../models/blog')
+const { title } = require('node:process')
+const { url } = require('node:inspector')
 
 const api = supertest(app)
 
@@ -29,7 +31,7 @@ test('all blog posts are returned', async () => {
     assert.strictEqual(response.body.length, helper.initialBlogs.length)
 })
 
-test.only('unique id of blog posts is id, by default db names _id', async () => {
+test('unique id of blog posts is id, by default db names _id', async () => {
     const response = await api.get('/api/blogs')
 
     // console.log(Object.keys(response.body[0]))
@@ -37,6 +39,27 @@ test.only('unique id of blog posts is id, by default db names _id', async () => 
     assert.ok('id' in response.body[0])
     assert.ok(!('_id' in response.body[0]))
     assert.ok(!('__v' in response.body[0]))
+})
+
+test.only('a valid blogpost can be added', async () => {
+    const newBlogpost = {
+        title: 'third one test post',
+        author: 'Chaava',
+        url: 'www.raaje.com',
+        likes: 1630
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlogpost)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+    
+    const blogsAtEnd = await helper.blogsInDb()
+    const contents = blogsAtEnd.map(n => n.title)
+
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1)
+    assert(contents.includes('third one test post'))
 })
 
 after(async () => {
