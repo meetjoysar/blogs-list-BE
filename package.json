@@ -4,15 +4,19 @@
   "description": "initializing the app given in Ex 4.1",
   "main": "index.js",
   "scripts": {
-    "dev": "node --watch index.js",
-    "start": "node index.js",
-    "test": "node --test"
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "test": "cross-env NODE_ENV=test node --test"
   },
   "author": "Meet Joy",
   "license": "MIT",
   "dependencies": {
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "mongoose": "^9.0.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
   }
 }
