@@ -81,6 +81,8 @@ test('verifies, if likes is missing from req, it will default to value 0', async
 })
 
 test.only('verify that if the title or url properties are missing', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    
     const newBlogpost = {
         // title: 'meetu',
         author: 'Chintu',
@@ -91,6 +93,9 @@ test.only('verify that if the title or url properties are missing', async () => 
         .post('/api/blogs')
         .send(newBlogpost)
         .expect(400)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
 })
 
 after(async () => {
