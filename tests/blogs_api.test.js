@@ -15,7 +15,7 @@ beforeEach(async () => {
     await Blog.insertMany(helper.initialBlogs)
 })
 
-test.only('all blog posts are returned in JSON format', async () => {
+test('all blog posts are returned in JSON format', async () => {
     // console.log('entered test')
     await api
         .get('/api/blogs')
@@ -23,10 +23,20 @@ test.only('all blog posts are returned in JSON format', async () => {
         .expect('Content-Type', /application\/json/)
 })
 
-test.only('all blog posts are returned', async () => {
+test('all blog posts are returned', async () => {
     const response = await api.get('/api/blogs')
 
     assert.strictEqual(response.body.length, helper.initialBlogs.length)
+})
+
+test.only('unique id of blog posts is id, by default db names _id', async () => {
+    const response = await api.get('/api/blogs')
+
+    // console.log(Object.keys(response.body[0]))
+    // assert.strictEqual(!!response.body[0].id, true)
+    assert.ok('id' in response.body[0])
+    assert.ok(!('_id' in response.body[0]))
+    assert.ok(!('__v' in response.body[0]))
 })
 
 after(async () => {
