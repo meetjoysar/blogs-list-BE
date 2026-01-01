@@ -62,7 +62,7 @@ test('a valid blogpost can be added', async () => {
     assert(contents.includes('third one test post'))
 })
 
-test.only('verifies, if likes is missing from req, it will default to value 0', async () => {
+test('verifies, if likes is missing from req, it will default to value 0', async () => {
     const newBlogpost = {
         title: 'third one test post w/o likes',
         author: 'Chintu',
@@ -78,6 +78,19 @@ test.only('verifies, if likes is missing from req, it will default to value 0', 
     const blogsAtEnd = await helper.blogsInDb()
     const addedBlog = blogsAtEnd.find(b => b.title === 'third one test post w/o likes')
     assert.strictEqual(addedBlog.likes, 0)
+})
+
+test.only('verify that if the title or url properties are missing', async () => {
+    const newBlogpost = {
+        // title: 'meetu',
+        author: 'Chintu',
+        url: 'www.ad.com'
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlogpost)
+        .expect(400)
 })
 
 after(async () => {
