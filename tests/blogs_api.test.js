@@ -80,7 +80,7 @@ test('verifies, if likes is missing from req, it will default to value 0', async
     assert.strictEqual(addedBlog.likes, 0)
 })
 
-test.only('verify that if the title or url properties are missing', async () => {
+test('verify that if the title or url properties are missing', async () => {
     const blogsAtStart = await helper.blogsInDb()
     
     const newBlogpost = {
@@ -96,6 +96,22 @@ test.only('verify that if the title or url properties are missing', async () => 
 
     const blogsAtEnd = await helper.blogsInDb()
     assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
+})
+
+test.only('deletion of a note, should return 204', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    // console.log(blogsAtStart)
+    const blogToDelete = blogsAtStart.find(b => b.title === 'Second BlogList')
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+    // console.log(blogsAtEnd)
+
+    assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1)
+
+    const contents = blogsAtEnd.map(b => b.title)
+    assert(!contents.includes('Second BlogList'))
 })
 
 after(async () => {
