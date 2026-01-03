@@ -98,7 +98,7 @@ test('verify that if the title or url properties are missing', async () => {
     assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
 })
 
-test.only('deletion of a note, should return 204', async () => {
+test('deletion of a note, should return 204', async () => {
     const blogsAtStart = await helper.blogsInDb()
     // console.log(blogsAtStart)
     const blogToDelete = blogsAtStart.find(b => b.title === 'Second BlogList')
@@ -112,6 +112,29 @@ test.only('deletion of a note, should return 204', async () => {
 
     const contents = blogsAtEnd.map(b => b.title)
     assert(!contents.includes('Second BlogList'))
+})
+
+test('updatig the likes property', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blog2update = blogsAtStart.find(b => b.title === 'Second BlogList')
+    // console.log(blog2update)
+
+    const updatedBlogpost = {
+        title: blog2update.title,
+        author: blog2update.author,
+        url: blog2update.url,
+        likes: 2026
+    }
+
+    await api
+        .put(`/api/blogs/${blog2update.id}`)
+        .send(updatedBlogpost)
+        .expect(200)
+    
+    const blogsAtEnd = await helper.blogsInDb()
+    // console.log(blogsAtEnd)
+    const updatedBlogInDb = blogsAtEnd.find(b => b.id === blog2update.id)
+    assert.strictEqual(updatedBlogInDb.likes, updatedBlogpost.likes)
 })
 
 after(async () => {

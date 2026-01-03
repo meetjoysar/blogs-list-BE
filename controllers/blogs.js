@@ -15,12 +15,35 @@ blogsRouter.post('/', async (req, res) => {
   const blog = new Blog(req.body)
 
   const result = await blog.save()
-  res.status(201).json(result)
+  return res.status(201).json(result)
 })
 
 blogsRouter.delete('/:id', async (req, res) => {
   await Blog.findByIdAndDelete(req.params.id)
-  res.status(204).end()
+  return res.status(204).end()
+})
+
+blogsRouter.put('/:id', async (req, res) => {
+  const { title, author, url, likes } = req.body
+
+  if (!title || !url) {
+    return res.status(400).json({ error: 'title or url missing'})
+  }
+
+  const blog2update = {
+    title,
+    author,
+    url,
+    likes,
+  }
+
+  const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, blog2update, { new: true, runValidators: true, context: 'query' })
+
+  if (!updatedBlog) {
+    res.status(404).end()
+  } else {
+    res.json(updatedBlog)
+  }
 })
 
 module.exports = blogsRouter
