@@ -137,7 +137,7 @@ test('updatig the likes property', async () => {
     assert.strictEqual(updatedBlogInDb.likes, updatedBlogpost.likes)
 })
 
-describe.only('when there is initially only one user in db', () => {
+describe('when there is initially only one user in db', () => {
     beforeEach(async () => {
         await User.deleteMany({})
 
@@ -189,6 +189,79 @@ describe.only('when there is initially only one user in db', () => {
         assert(result.body.error.includes('expected `username` to be unique'))
         assert.strictEqual(usersAtEnd.length, usersAtStart.length)
     })
+})
+
+describe('checking validation of usernaem, password', () => {
+    beforeEach(async () => {
+        await User.deleteMany({})
+
+        const passwordHash = await bcrypt.hash('sekret', 10)
+        const user = new User({ username: 'root', passwordHash })
+
+        await user.save()
+    })
+
+    test('Missing password', async () => {
+        const usersAtStart = await helper.usersInDb()
+
+        const newUser = {
+            username: 'root',
+            name: 'Superuser',
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+            .expect('Content-Type', /application\/json/)
+
+        const usersAtEnd = await helper.usersInDb()
+        // console.log(result)
+        assert(result.body.error.includes('password is required'))
+        assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+    })
+
+    test('Password < 3 chars', async () => {
+        const usersAtStart = await helper.usersInDb()
+
+        const newUser = {
+            username: 'root',
+            name: 'Superuser',
+            password: '12'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+            .expect('Content-Type', /application\/json/)
+
+        const usersAtEnd = await helper.usersInDb()
+        // console.log(result)
+        assert(result.body.error.includes('password must be at least 3 characters long'))
+        assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+    })
+
+    test('Username < 3 chars', async () => {
+        const usersAtStart = await helper.usersInDb()
+
+        const newUser = {
+            username: 'ro',
+            name: 'Superuser',
+            password: 'abc336'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+            .expect('Content-Type', /application\/json/)
+
+        const usersAtEnd = await helper.usersInDb()
+        console.log(result.body)
+        assert(result.body.error.includes('minimum allowed length (3)'))
+        assert.strictEqual(usersAtEnd.length, usersAtStart.length)
+    })    
 })
 
 after(async () => {
