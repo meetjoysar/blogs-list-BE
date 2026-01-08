@@ -25,8 +25,8 @@ blogsRouter.post('/', async (req, res) => {
   }
   const user_in_db = await User.findById(decodedToken.id)
 
-  if (!user_in_db) {
-    return res.status(400).json({ error: 'userId missing or not valid' })
+  if (!user_in_db || decodedToken.tokenVersion !== user_in_db.tokenVersion) {
+    return res.status(401).json({ error: 'user not valid/token no longer valid' })
   } else if (!req_body.title || !req_body.url) {
     // console.log(res)
     return res.status(400).json({ error: 'title and/or body missing' })
