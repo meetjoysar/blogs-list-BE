@@ -10,11 +10,33 @@ const bcrypt = require('bcrypt')
 
 const api = supertest(app)
 
-beforeEach(async () => {
-    await Blog.deleteMany({})
-    // console.log('cleared')
+let tokenGot = ''
 
-    await Blog.insertMany(helper.initialBlogs)
+beforeEach(async () => {
+    if (mongoose.connection.readyState === 0) {
+        console.log('Mongoose not connected, check your URI and network');
+    }
+
+    await User.deleteMany({})
+    await Blog.deleteMany({})
+
+    //1. Creating user
+    const passwordHash = await bcrypt.hash('sekret', 10)
+    const user = new User({ username: 'root', name:'testMeet', passwordHash })
+    const savedUser = await user.save()
+
+    //2 Getting token
+    const res = await api.post('/api/login').send({ username: 'root', password: 'sekret' })
+    console.log(res.body)
+    tokenGot = res.body.token
+
+    //3. linking initialblogs to this user
+    const blogObjs = helper.initialBlogs.map(blog => ({
+        ...blog,
+        user: savedUser._id
+    }))
+    // console.log('cleared')
+    await Blog.insertMany(blogObjs)
 })
 
 test('all blog posts are returned in JSON format', async () => {
@@ -51,6 +73,7 @@ test('a valid blogpost can be added', async () => {
 
     await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenGot}`)
         .send(newBlogpost)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -71,6 +94,7 @@ test('verifies, if likes is missing from req, it will default to value 0', async
 
     await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenGot}`)
         .send(newBlogpost)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -91,6 +115,7 @@ test('verify that if the title or url properties are missing', async () => {
 
     await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenGot}`)
         .send(newBlogpost)
         .expect(400)
 
@@ -103,7 +128,10 @@ test('deletion of a note, should return 204', async () => {
     // console.log(blogsAtStart)
     const blogToDelete = blogsAtStart.find(b => b.title === 'Second BlogList')
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+    await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `Bearer ${tokenGot}`)
+        .expect(204)
 
     const blogsAtEnd = await helper.blogsInDb()
     // console.log(blogsAtEnd)
@@ -262,6 +290,23 @@ describe('checking validation of usernaem, password', () => {
         assert(result.body.error.includes('minimum allowed length (3)'))
         assert.strictEqual(usersAtEnd.length, usersAtStart.length)
     })    
+})
+
+test('adding a blog fails with 401 Unauthorized if token is not provided', async () => {
+    const newBlogpost = {
+        title: 'Unauthorized blog',
+        author: 'Hackerman',
+        url: 'www.hack.com',
+        likes: 0
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlogpost)
+        .expect(401) // Expecting failure because no token is set
+
+    const blogsAtEnd = await helper.blogsInDb()
+    assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
 })
 
 after(async () => {
