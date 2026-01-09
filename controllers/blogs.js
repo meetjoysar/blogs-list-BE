@@ -2,6 +2,7 @@ const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
+const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (req, res) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
@@ -16,27 +17,34 @@ blogsRouter.get('/', async (req, res) => {
 //   return null
 // }
 
-blogsRouter.post('/', async (req, res) => {
+blogsRouter.post('/', middleware.userExtractor, async (req, res) => {
   const req_body = req.body
 
-  const decodedToken = jwt.verify(req.token, process.env.SECRET)
-  if (!decodedToken.id) {
-    return res.status(401).json({ error: 'token invalid' })
-  }
-  const user_in_db = await User.findById(decodedToken.id)
+  // const decodedToken = jwt.verify(req.token, process.env.SECRET)
+  // if (!decodedToken.id) {
+  //   return res.status(401).json({ error: 'token invalid' })
+  // }
+  // const user_in_db = await User.findById(decodedToken.id)
 
-  if (!user_in_db || decodedToken.tokenVersion !== user_in_db.tokenVersion) {
-    return res.status(401).json({ error: 'user not valid/token no longer valid' })
-  } else if (!req_body.title || !req_body.url) {
+  // if (!user_in_db || decodedToken.tokenVersion !== user_in_db.tokenVersion) {
+  //   return res.status(401).json({ error: 'user not valid/token no longer valid' })
+  // } else if (!req_body.title || !req_body.url) {
+  //   // console.log(res)
+  //   return res.status(400).json({ error: 'title and/or body missing' })
+  // }
+
+  if (!req_body.title || !req_body.url) {
     // console.log(res)
     return res.status(400).json({ error: 'title and/or body missing' })
   }
-  
+
+  const user_in_db = req.user
+  // console.log('inside blogs post', req.user.toJSON())
   const blogpost = new Blog({
     url: req_body.url,
     title: req_body.title,
     author: req_body.author,
-    user: user_in_db._id,
+    user: user_in_db._id.toString(),
     likes: req_body.likes
   })
 
@@ -47,16 +55,16 @@ blogsRouter.post('/', async (req, res) => {
   return res.status(201).json(savedBlog)
 })
 
-blogsRouter.delete('/:id', async (req, res) => {
-  const decodedToken = jwt.verify(req.token, process.env.SECRET)
-  if (!decodedToken.id) {
-    return res.status(401).json({ error: 'token invalid' })
-  }
-  const user_in_db = await User.findById(decodedToken.id)
+blogsRouter.delete('/:id', middleware.userExtractor, async (req, res) => {
+  // const decodedToken = jwt.verify(req.token, process.env.SECRET)
+  // if (!decodedToken.id) {
+  //   return res.status(401).json({ error: 'token invalid' })
+  // }
+  // const user_in_db = await User.findById(decodedToken.id)
 
-  if (!user_in_db || decodedToken.tokenVersion !== user_in_db.tokenVersion) {
-    return res.status(401).json({ error: 'user not valid/token no longer valid' })
-  }
+  // if (!user_in_db || decodedToken.tokenVersion !== user_in_db.tokenVersion) {
+  //   return res.status(401).json({ error: 'user not valid/token no longer valid' })
+  // }
 
   const blog = await Blog.findById(req.params.id)
   if (!blog) {
@@ -64,8 +72,7 @@ blogsRouter.delete('/:id', async (req, res) => {
   }
 
   //checking ownership
-  if (blog.user.toString() !== decodedToken.id.toString()) {
-    console.log(blog.user.toString())
+  if (blog.user.toString() !== req.user.id.toString()) {
     return res.status(403).json({ error: 'user not authorized' })
   }
 
